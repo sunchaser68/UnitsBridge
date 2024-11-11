@@ -1,0 +1,5 @@
+{
+    "require": {
+        "deemru/unitskit": "^1.0"
+    }
+}
