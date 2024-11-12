@@ -1,37 +1,32 @@
 <?php
 
 require_once 'vendor/autoload.php';
+require_once __DIR__ . '../../include/commons.php';
+require_once __DIR__ . '../../config/config.php';
 
 use deemru\UnitsKit;
 use deemru\WavesKit;
 
-if( file_exists( __DIR__ . '/private.php' ) )
-{
-    require_once __DIR__ . '/private.php';
-}
+if ($argc!=3)
+    die("Usage: php bridge.php [password] [amount]\n");
+
+$password=$argv[1];
+$amount=$argv[2];
+
+$amount = UnitsKit::hexValue( $amount );
+$unitsPrivateKey = encrypt_decrypt('decrypt', $password, $config['unit0']['key_node']);
+$wavesPrivateKey = encrypt_decrypt('decrypt', $password, $config['waves']['key_node']);
+$unitsDapp = $config['unit0']['unitsdapp'];
+$bridgeContract = $config['unit0']['bridgecontract'];
+
+$wk = new WavesKit( $config['waves']['chain'] );
+
+if ($config['waves']['chain']=='T')
+	$uk = UnitsKit::TESTNET();
+elseif ($config['waves']['chain']=='W')
+	$uk = UnitsKit::MAINNET();
 else
-if( 10 ) // MAINNET
-{
-    $amount = UnitsKit::hexValue( 1.0 );
-    $unitsPrivateKey = '0x33eb576d927573cff6ae50a9e09fc60b672a8dafdfbe3045c7f62955fc55ccb4';
-    $wavesPrivateKey = '49mgaSSVQw6tDoZrHSr9rFySgHHXwgQbCRwFssboVLWX';
-    $unitsDapp = '3PKgN8rfmvF7hK7RWJbpvkh59e1pQkUzero';
-    $bridgeContract = '0x0000000000000000000000000000000000006a7e';
-
-    $uk = UnitsKit::MAINNET();
-    $wk = new WavesKit( 'W' );
-}
-else // TESTNET
-{
-    $amount = UnitsKit::hexValue( 1.0 );
-    $unitsPrivateKey = '0x33eb576d927573cff6ae50a9e09fc60b672a8dafdfbe3045c7f62955fc55ccb4';
-    $wavesPrivateKey = '49mgaSSVQw6tDoZrHSr9rFySgHHXwgQbCRwFssboVLWX';
-    $unitsDapp = '3Msx4Aq69zWUKy4d1wyKnQ4ofzEDAfv5Ngf';
-    $bridgeContract = '0x0000000000000000000000000000000000006a7e';
-
-    $uk = UnitsKit::TESTNET();
-    $wk = new WavesKit( 'T' );
-}
+	die('Not supported chain');
 
 $uk->setPrivateKey( $unitsPrivateKey );
 $uk->log( 'UNITS: ' . $uk->getAddress() . ' ~ ' . $uk->stringValue( $uk->getBalance() ) . ' UNIT0' );
@@ -41,7 +36,7 @@ $uk->log( 'WAVES: ' . str_pad( $wk->getAddress(), 42 ) . ' ~ ' . $uk->stringValu
 // PHASE 1 (UNITS BRIDGE TX)
 if( 10 )
 {
-    $uk->log( 'UNITS: sending ' . $uk->stringValue( $amount ) . ' UNIT0 from ' . $uk->getAddress() . ' to ' . $wk->getAddress() );
+    $uk->log( 'UNITS: sending ' . $uk->stringValue( $amount ) . ' UNIT0 from ' . $uk->getAddress() . ' to ' . $wk->getAddress() );	
     $wavesPublicKeyHash = substr( $wk->getAddress( true ), 2, 20 );
     $sendNativeInput = '0x' . '78338413' . bin2hex( str_pad( $wavesPublicKeyHash, 32, chr( 0 ) ) );
     $gasPrice = $uk->getGasPrice();
