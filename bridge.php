@@ -88,7 +88,6 @@ if( 10 )
 }
 
 $wk->log( 's', 'DONE.' );
-exit;
 
 // SUPPORT FUNCTIONS
 
@@ -128,14 +127,19 @@ function waitFinalized( $wk, $tx, $unitDapp )
     if( $targetHeight === false )
         return false;
 
+    $lastFinalizedBlock = '';
     for( ;; )
     {
         $finalizedBlock = $wk->getData( 'finalizedBlock', $unitDapp );
         if( $finalizedBlock === false )
             return false;
-        $finalizedHeight = getHeightByBlock( $wk, '0x' . $finalizedBlock, $unitDapp );
-        if( $finalizedHeight === false )
-            return false;
+        if( $lastFinalizedBlock !== $finalizedBlock )
+        {
+            $lastFinalizedBlock = $finalizedBlock;
+            $finalizedHeight = getHeightByBlock( $wk, '0x' . $finalizedBlock, $unitDapp );
+            if( $finalizedHeight === false )
+                return false;
+        }
         $headInfo = $wk->getData( 'chain_00000000', $unitDapp );
         if( $headInfo === false )
             return false;
