@@ -49,6 +49,10 @@ if( 10 )
     $tx = $uk->ensure( $tx );
     $uk->log( 'UNITS: sending done' );
 }
+else
+{
+    $tx['hash'] = '0x0169ce63be74489c48832d8f48cea4743c71c926d9f8515dae6e57715f76c001';
+}
 
 // PHASE 2 (WAIT FINALIZED)
 if( 10 )
@@ -83,14 +87,13 @@ if( 10 )
 }
 
 $wk->log( 's', 'DONE.' );
-exit;
 
 // SUPPORT FUNCTIONS
 
 function withdraw( $uk, $wk, $tx, $unitsDapp )
 {
-    $proofs = $uk->getBridgeProofs( $tx );
-    if( $proofs === false )
+    [ $proofs, $index ] = $uk->getBridgeProofs( $tx );
+    if( $proofs === false || $index === false )
         return false;
 
     $wavesProofs = [];
@@ -99,7 +102,6 @@ function withdraw( $uk, $wk, $tx, $unitsDapp )
 
     $blockHash = substr( $tx['receipt']['blockHash'], 2 );
     $wavesProofs = [ 'list' => $wavesProofs ];
-    $index = hexdec( $tx['receipt']['logs'][0]['logIndex'] );
     $amount = gmp_intval( gmp_div( gmp_init( $tx['value'], 16 ), 10000000000 ) );
 
     $tx = $wk->txInvokeScript( $unitsDapp, 'withdraw', [ $blockHash, $wavesProofs, $index, $amount ] );
@@ -123,14 +125,19 @@ function waitFinalized( $wk, $tx, $unitDapp )
     if( $targetHeight === false )
         return false;
 
+    $lastFinalizedBlock = '';
     for( ;; )
     {
         $finalizedBlock = $wk->getData( 'finalizedBlock', $unitDapp );
         if( $finalizedBlock === false )
             return false;
-        $finalizedHeight = getHeightByBlock( $wk, '0x' . $finalizedBlock, $unitDapp );
-        if( $finalizedHeight === false )
-            return false;
+        if( $lastFinalizedBlock !== $finalizedBlock )
+        {
+            $lastFinalizedBlock = $finalizedBlock;
+            $finalizedHeight = getHeightByBlock( $wk, '0x' . $finalizedBlock, $unitDapp );
+            if( $finalizedHeight === false )
+                return false;
+        }
         $headInfo = $wk->getData( 'chain_00000000', $unitDapp );
         if( $headInfo === false )
             return false;
